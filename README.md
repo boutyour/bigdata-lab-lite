@@ -1,5 +1,7 @@
 # BigData-Lab Lite — Hadoop, Spark et Hive optimisés pour 8 Go, 16 Go et >16 Go
 
+> **Étudiant ?** Commencez par le [Quick Start — préparation en 10 minutes](docs/QUICKSTART-ETUDIANT.md). Pour une préparation détaillée, consultez le [guide complet](docs/GUIDE-ETUDIANT-PREPARATION.md).
+
 Dépôt pédagogique pour **Hadoop HDFS + YARN/MapReduce**, **Apache Spark/PySpark** et **Apache Hive**, avec des images construites de manière conservatrice en **multi-stage**. L'architecture est modulée selon la RAM disponible afin que les machines de 8 Go restent utilisables pendant les TP.
 
 ## Philosophie de dimensionnement
