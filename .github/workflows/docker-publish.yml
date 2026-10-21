@@ -1,0 +1,67 @@
+name: Publish Docker images
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: hadoop-lite
+            context: docker/runtime
+            dockerfile: docker/runtime/Dockerfile
+            target: hadoop
+            version: '3.4.2'
+          - name: spark-lite
+            context: docker/runtime
+            dockerfile: docker/runtime/Dockerfile
+            target: spark
+            version: '3.5.7'
+          - name: hive-postgres
+            context: docker/hive-postgres
+            dockerfile: docker/hive-postgres/Dockerfile
+            target: ''
+            version: '4.2.1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required Docker Hub configuration
+        shell: bash
+        run: |
+          test -n "${{ vars.DOCKERHUB_USERNAME }}" || { echo 'Missing repository variable DOCKERHUB_USERNAME'; exit 1; }
+          test -n "${{ secrets.DOCKERHUB_TOKEN }}" || { echo 'Missing repository secret DOCKERHUB_TOKEN'; exit 1; }
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.name }}:${{ matrix.version }}
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.name }}:${{ matrix.version }}-${{ github.ref_name }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          provenance: mode=max
+          sbom: true
