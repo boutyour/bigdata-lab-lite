@@ -1,0 +1,16 @@
+# 16 Go: Hadoop + Spark + Hive complet possibles pour les TP d'intégration.
+services:
+  hadoop:
+    mem_limit: 4000m
+    cpus: 2.0
+  spark:
+    mem_limit: 4200m
+    cpus: 3.0
+  postgres:
+    mem_limit: 512m
+  metastore:
+    mem_limit: 900m
+  hive-full:
+    mem_limit: 1400m
+  worker2:
+    mem_limit: 1500m

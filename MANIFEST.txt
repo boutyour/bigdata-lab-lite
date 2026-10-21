@@ -1,0 +1,8 @@
+BigData-Lab Lite 2.0
+- Hadoop 3.4.2 lean, multi-stage, Temurin 11 JRE
+- Spark 3.5.7 bin-hadoop3, multi-stage, Temurin 17 JRE + Python runtime
+- Hive 4.2.1 official image for 8 GB profile
+- Hive 4.2.1 + PostgreSQL JDBC derived image for 16 GB and plus profiles
+- Profiles: 8 GB, 16 GB, >16 GB
+- TP01..TP07
+- Conservative policy: no framework JAR deletion, no jlink reduction

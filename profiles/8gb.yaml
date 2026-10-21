@@ -1,0 +1,12 @@
+# 8 Go: un framework de calcul à la fois.
+# Hive = Hadoop + HiveServer2 léger (Derby embarqué). Spark doit être arrêté.
+services:
+  hadoop:
+    mem_limit: 3000m
+    cpus: 2.0
+  spark:
+    mem_limit: 2800m
+    cpus: 2.0
+  hive-lite:
+    mem_limit: 1200m
+    cpus: 1.5

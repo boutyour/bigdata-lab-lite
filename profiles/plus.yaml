@@ -1,0 +1,17 @@
+# >16 Go: davantage de marge et second DataNode facultatif.
+services:
+  hadoop:
+    mem_limit: 5200m
+    cpus: 3.0
+  spark:
+    mem_limit: 6000m
+    cpus: 4.0
+  postgres:
+    mem_limit: 768m
+  metastore:
+    mem_limit: 1200m
+  hive-full:
+    mem_limit: 1800m
+  worker2:
+    mem_limit: 2200m
+    cpus: 2.0

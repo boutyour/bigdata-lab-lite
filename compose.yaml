@@ -1,0 +1,176 @@
+name: bigdata-lab
+services:
+  hadoop:
+    profiles: [hadoop]
+    build:
+      context: ./docker/runtime
+      dockerfile: Dockerfile
+      target: hadoop
+    image: bigdata-lab/hadoop-lite:3.4.2
+    hostname: hadoop
+    mem_limit: 3200m
+    cpus: 2.0
+    ports:
+      - "127.0.0.1:9870:9870"
+      - "127.0.0.1:8088:8088"
+    volumes:
+      - namenode:/data/namenode
+      - datanode:/data/datanode
+      - ./tp:/workspace/tp:ro
+      - ./datasets:/workspace/datasets:ro
+    stop_grace_period: 40s
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 45s
+
+  spark:
+    profiles: [spark]
+    build:
+      context: ./docker/runtime
+      dockerfile: Dockerfile
+      target: spark
+    image: bigdata-lab/spark-lite:3.5.7
+    hostname: spark
+    mem_limit: 3000m
+    cpus: 2.0
+    environment:
+      SPARK_LOCAL_IP: spark
+      PYSPARK_SUBMIT_ARGS: "--conf spark.sql.shuffle.partitions=4 pyspark-shell"
+    volumes:
+      - ./tp:/workspace/tp:ro
+      - ./datasets:/workspace/datasets:ro
+      - ./output:/workspace/output
+    working_dir: /workspace
+
+  hive-lite:
+    profiles: [hive-lite]
+    image: apache/hive:4.2.1
+    hostname: hive-lite
+    mem_limit: 1200m
+    cpus: 1.5
+    depends_on:
+      hadoop:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: hiveserver2
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+      HADOOP_CLIENT_OPTS: "-Xmx512m"
+    ports:
+      - "127.0.0.1:10000:10000"
+      - "127.0.0.1:10002:10002"
+    volumes:
+      - ./docker/hive/conf:/hive_custom_conf:ro
+      - ./tp:/workspace/tp:ro
+      - ./datasets:/workspace/datasets:ro
+      - hive_lite_data:/opt/hive/data
+    healthcheck:
+      test: ["CMD-SHELL", "beeline -u 'jdbc:hive2://localhost:10000/default' -e 'SELECT 1;' >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 45s
+
+  postgres:
+    profiles: [hive-full]
+    image: postgres:17-alpine
+    hostname: postgres
+    mem_limit: 512m
+    cpus: 0.75
+    environment:
+      POSTGRES_DB: metastore_db
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+    volumes:
+      - hive_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  metastore:
+    profiles: [hive-full]
+    build:
+      context: ./docker/hive-postgres
+    image: bigdata-lab/hive-postgres:4.2.1
+    hostname: metastore
+    mem_limit: 900m
+    cpus: 1.0
+    depends_on:
+      hadoop:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+      HADOOP_CLIENT_OPTS: "-Xmx384m"
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/metastore_db
+        -Djavax.jdo.option.ConnectionUserName=hive
+        -Djavax.jdo.option.ConnectionPassword=hive
+    volumes:
+      - ./docker/hive/conf:/hive_custom_conf:ro
+
+  hive-full:
+    profiles: [hive-full]
+    build:
+      context: ./docker/hive-postgres
+    image: bigdata-lab/hive-postgres:4.2.1
+    hostname: hive-full
+    mem_limit: 1400m
+    cpus: 1.5
+    depends_on:
+      hadoop:
+        condition: service_healthy
+      metastore:
+        condition: service_started
+    environment:
+      SERVICE_NAME: hiveserver2
+      HIVE_CUSTOM_CONF_DIR: /hive_custom_conf
+      IS_RESUME: "true"
+      HADOOP_CLIENT_OPTS: "-Xmx512m"
+      SERVICE_OPTS: "-Dhive.metastore.uris=thrift://metastore:9083"
+    ports:
+      - "127.0.0.1:10000:10000"
+      - "127.0.0.1:10002:10002"
+    volumes:
+      - ./docker/hive/conf:/hive_custom_conf:ro
+      - ./tp:/workspace/tp:ro
+      - ./datasets:/workspace/datasets:ro
+    healthcheck:
+      test: ["CMD-SHELL", "beeline -u 'jdbc:hive2://localhost:10000/default' -e 'SELECT 1;' >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 45s
+
+  worker2:
+    profiles: [cluster]
+    image: bigdata-lab/hadoop-lite:3.4.2
+    build:
+      context: ./docker/runtime
+      dockerfile: Dockerfile
+      target: hadoop
+    hostname: worker2
+    command: ["worker"]
+    mem_limit: 1500m
+    cpus: 1.0
+    depends_on:
+      hadoop:
+        condition: service_healthy
+    volumes:
+      - datanode2:/data/datanode
+    stop_grace_period: 40s
+
+volumes:
+  namenode:
+  datanode:
+  datanode2:
+  hive_lite_data:
+  hive_postgres:

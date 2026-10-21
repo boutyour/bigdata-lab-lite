@@ -1,0 +1,10 @@
+**/.git
+**/__pycache__
+**/.pytest_cache
+**/.venv
+**/venv
+**/*.log
+**/*.csv
+**/*.parquet
+!datasets/*.csv
+.DS_Store
