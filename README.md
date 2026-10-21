@@ -10,6 +10,10 @@ Dépôt pédagogique pour **Hadoop HDFS + YARN/MapReduce**, **Apache Spark/PySpa
 
 Les limites Docker sont des **plafonds**, pas de la mémoire réservée. La consommation réelle dépend des requêtes, de l'OS et des jeux de données.
 
+## Guide étudiant — préparation de la machine
+
+Avant la première séance de TP, suivre le [guide de préparation étudiant](docs/GUIDE-ETUDIANT-PREPARATION.md). Il couvre l'installation de Docker, le choix du profil matériel, la configuration du dépôt et les tests de validation.
+
 ## Prérequis
 
 - Linux x86_64, Docker Engine + plugin Compose v2, GNU Make, Bash.
